@@ -1,0 +1,29 @@
+{
+	"name": "quarkus-ext-task-test",
+	"displayName": "quarkus-ext-task-test",
+	"description": "testing task provider",
+	"version": "0.0.1",
+	"publisher": "redhat",
+	"enableProposedApi": "true",
+	"engines": {
+		"vscode": "^1.39.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:workbench.action.tasks.runTask"
+	],
+	"main": "./out/extension",
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w"
+	},
+	"devDependencies": {
+		"@types/node": "^8.0.0",
+		"tslint": "^5.16.0",
+		"typescript": "^3.5.1",
+		"@types/vscode": "^1.39.0"
+	}
+}

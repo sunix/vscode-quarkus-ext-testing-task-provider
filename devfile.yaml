@@ -1,0 +1,90 @@
+---
+apiVersion: 1.0.0
+metadata:
+  generateName: test-task-provider
+projects:
+  - name: vscode-quarkus-ext-testing-task-provider
+    source:
+      type: git
+      location: "https://github.com/sunix/vscode-quarkus-ext-testing-task-provider"
+
+
+components:
+
+  - alias: java
+    id: redhat/java/latest
+    memoryLimit: 3072M
+    type: chePlugin
+
+  - id: eclipse/che-theia/next
+    type: cheEditor
+    alias: theia-editor
+
+  - alias: npm-maven
+    mountSources: true
+    image: 'quay.io/eclipse/che-nodejs8-centos:7.2.0'
+    memoryLimit: 768Mi
+    type: dockerimage
+    volumes:
+      - name: m2
+        containerPath: /home/user/.m2
+
+  - alias: che-dev
+    type: dockerimage
+    image: eclipse/che-theia-dev:next
+    mountSources: true
+    endpoints:
+      - name: "theia-dev-flow"
+        port: 3010
+        attributes:
+          protocol: http
+          public: 'true'
+    memoryLimit: "1Gi"
+
+  - mountSources: true
+    memoryLimit: 256M
+    type: dockerimage
+    alias: git
+    image: sunix/git-devtools
+
+commands:
+
+  - name: npm install and run build
+    actions:
+      - type: exec
+        command: >
+          npm install &&
+          echo -e "\e[32mDone.\e[0m npm install and run build complete"
+        component: npm-maven
+        workdir: /projects/vscode-quarkus-ext-testing-task-provider
+
+  - name: package ... vscode extension
+    actions:
+      - workdir: /projects/vscode-quarkus-ext-testing-task-provider
+        type: exec
+        command: >
+          yes | vsce package &&
+          echo -e "\e[32mDone.\e[0m Packaging complete"
+        component: che-dev
+ 
+  - name: run ... HOSTED che-theia + detect remote vscode ext
+    actions:
+      - workdir: /home/theia
+        type: exec
+        command: >
+          export THEIA_PLUGIN_ENDPOINT_DISCOVERY_PORT='2504' && 
+          /usr/local/bin/node /home/theia/src-gen/backend/main.js /projects
+          --hostname=0.0.0.0 --port=3130
+        component: theia-editor
+
+  - name: run ... remote vscode ext
+    actions:
+      - workdir: /home/theia/
+        type: exec
+        command: >
+          export THEIA_PLUGIN_ENDPOINT_DISCOVERY_PORT='2504' &&
+          export THEIA_PLUGINS='local-dir:///projects/vscode-quarkus-ext-testing-task-provider/' &&
+          export THEIA_PLUGIN_ENDPOINT_PORT='10000' && 
+          /remote-endpoint/plugin-remote-endpoint
+        component: java
+
